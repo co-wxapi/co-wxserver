@@ -44,15 +44,16 @@ class WeChat {
     var url = config.redirect;
     var wxapp = config.wxapp;
     var api = this.getApi(wxapp, ctx);
-    var token = yield api.auth.getAuthToken();
-    var data = api.auth.getUserInfo(token.access_token, token.openid);
+    var token = yield api.auth.getAuthToken(code);
+    var timestamp = new Date().getTime();
+    var data = yield api.auth.getUserInfo(token.access_token, token.openid);
     if ( url.indexOf('?') < 0 ) {
-      url += '?';
+      url += '?ts='+timestamp;
     }
     else {
-      url += '&';
+      url += '&ts='+timestamp;
     }
-    url += 'wxapp='+encodeURIComponent(wxapp)
+    if ( wxapp ) url += '&wxapp='+encodeURIComponent(wxapp);
     url += '&data='+JSON.stringify(data);
     ctx.redirect(url);
   }
