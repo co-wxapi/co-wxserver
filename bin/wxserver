@@ -7,7 +7,7 @@ function setup(app){
 
 var config = {
   docs: true,
-  http: { static: path.join(__dirname, 'www') },
+  http: { static: path.join(__dirname, '../www') },
   ws: {},
   setup: setup,
   port: process.env.WX_PORT || 3000

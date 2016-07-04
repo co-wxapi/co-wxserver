@@ -1,7 +1,7 @@
 'use strict';
 
 const REDIS_KEY = 'WXAPP:STATE:REGISTRY';
-var redis = require('../db/redis');
+var redis = require('../hub/redis');
 
 function appStateKey(appid) {
   return 'WXAPP:STATES:'+appid;
@@ -11,10 +11,12 @@ exports.register = function* registerOauthRedirectUrl(args){
   var state = args.state;
   var appid = args.appid;
   var redirect = args.redirect;
+  var wxappid = args.wxappid;
   var params = {
     appid: appid,
     redirect: redirect
   }
+  if ( wxappid ) params.wxappid = wxappid;
   yield redis.hset(REDIS_KEY, state, JSON.stringify(params));
 }
 
@@ -46,6 +48,7 @@ exports.list = function* getAllRegistered(){
 
 exports.get = function* getRedirectUrlByState(args){
   var state = args.state;
-  var url = yield redis.hget(REDIS_KEY, state);
-  return url;
+  var config = yield redis.hget(REDIS_KEY, state);
+  if ( config != null ) config = JSON.parse(config);
+  return config;
 }

@@ -1,5 +1,5 @@
 'use strict';
-
+var hub   = require('../hub');
 var store = require('../store');
 var crypt = require('../utils/crypt');
 
@@ -102,7 +102,7 @@ class App {
     return 'Succeeded';
   }
 
-  *oauth(args){
+  *all(args){
     var list = yield store.oauth.list();
     console.log('oauth', list);
     return list || [];

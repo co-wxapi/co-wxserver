@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+var wechat = require('../hub/wechat');
+var store = require('../store');
+var co = require('co')
+var timer = null;
+
+function *updateToken(){
+  var token = yield wechat.token.getAccessToken();
+  var ticket = yield wechat.jsapi.getTicket(token.access_token);
+  var now = new Date().getTime();
+  var tokenExpire = now + token.expires_in * 1000 - 30000;
+  var ticketExpire = now + ticket.expires_in * 1000 - 30000;
+  var data = {
+    wxappid: wechat.appId,
+    token: token.access_token,
+    ticket: ticket.ticket,
+    expire: tokenExpire<ticketExpire?tokenExpire:ticketExpire
+  }
+  yield store.token.save(data);
+  return data;
+}
+
+function startTokenUpdatProcess(){
+  if ( timer ) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  co(function*(){
+    var token = yield updateToken();
+    var now = new Date().getTime();
+    var timeout = token.expire - now;
+    if ( timeout < 0 ) timeout = 0;
+    timer = setTimeout(startTokenUpdatProcess, timeout);
+  }).catch(function(err){
+    if ( err ) {
+      console.error('Update wechat access token and jsapi ticket failed!', err, err.stack);
+      process.exit(1);
+    }
+  })
+}
+
+startTokenUpdatProcess();
