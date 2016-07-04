@@ -41,6 +41,7 @@ class WeChat {
     if ( !config || !config.redirect ) {
       this.throw('Url for '+state+' not registered!', 400);
     }
+    var app = yield store.app.get(args);
     var url = config.redirect;
     var wxapp = config.wxapp;
     var api = this.getApi(wxapp, ctx);
@@ -53,8 +54,14 @@ class WeChat {
     else {
       url += '&ts='+timestamp;
     }
-    if ( wxapp ) url += '&wxapp='+encodeURIComponent(wxapp);
-    url += '&data='+JSON.stringify(data);
+    url += '&wxapp='+api.wxapp;
+    if ( data ) {
+      data.wxapp = api.wxapp;
+      data.wxappid = api.appId;
+      data.ts = timestamp;
+      url += '&data='+encrypt.encryt(app.appkey, JSON.stringify(data));
+    }
+    console.log(url);
     ctx.redirect(url);
   }
 

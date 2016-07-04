@@ -45,6 +45,7 @@ function setupWeixin(config){
   for ( var wxapp in config ){
     var wxconfig = config[wxapp];
     apis[wxapp] = wxapi(wxconfig);
+    apis[wxapp].wxapp = wxapp;
     apis[wxapp].setTokenProvider(new TokenProvider(wxconfig));
     if ( !firstApp ) firstApp = wxapp;
   }
