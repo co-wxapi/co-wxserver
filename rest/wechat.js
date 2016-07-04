@@ -4,6 +4,7 @@ var store = require('../store');
 var hub   = require('../hub');
 class WeChat {
   getApi(wxapp, ctx){
+    wxapp = wxapp || '0';
     var api = hub.wechat[wxapp];
     if ( !api ) {
       ctx.throw('Wechat account of '+wxapp+' not configured!');
