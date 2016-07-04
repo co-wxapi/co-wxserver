@@ -11,12 +11,12 @@ exports.register = function* registerOauthRedirectUrl(args){
   var state = args.state;
   var appid = args.appid;
   var redirect = args.redirect;
-  var wxappid = args.wxappid;
+  var wxapp = args.wxapp;
   var params = {
     appid: appid,
     redirect: redirect
   }
-  if ( wxappid ) params.wxappid = wxappid;
+  if ( wxapp ) params.wxapp = wxapp;
   yield redis.hset(REDIS_KEY, state, JSON.stringify(params));
 }
 

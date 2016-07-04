@@ -14,16 +14,18 @@ class WeChat {
   *oauth(args, ctx){
     var state = args.state;
     var more = !!args.more;
+    var wxapp = args.wxapp;
     var host = ctx.get('host');
     if ( !host ) {
       throw new Error('Can not get host header!');
     }
-    if ( !state ) {
-      this.throw('State is not provided!', 400);
+    if ( !wxapp || !state ) {
+      this.throw('Missing params - state,wxapp', 400);
       return;
     }
     var redirectUrl = 'http://'+host+'/wechat/redirect';
-    var url = yield hub.wechat.auth.getAuthUrl(redirectUrl, state, more);
+    var api = this.getApi(wxapp, ctx);
+    var url = yield api.auth.getAuthUrl(redirectUrl, state, more);
     ctx.redirect(url);
   }
 
