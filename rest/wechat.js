@@ -2,6 +2,8 @@
 
 var store = require('../store');
 var hub   = require('../hub');
+var crypt = require('../utils/crypt');
+
 class WeChat {
   getApi(wxapp, ctx){
     wxapp = wxapp || '0';
@@ -41,7 +43,7 @@ class WeChat {
     if ( !config || !config.redirect ) {
       this.throw('Url for '+state+' not registered!', 400);
     }
-    var app = yield store.app.get(args);
+    var app = yield store.app.get(config);
     var url = config.redirect;
     var wxapp = config.wxapp;
     var api = this.getApi(wxapp, ctx);
@@ -59,7 +61,7 @@ class WeChat {
       data.wxapp = api.wxapp;
       data.wxappid = api.appId;
       data.ts = timestamp;
-      url += '&data='+encrypt.encryt(app.appkey, JSON.stringify(data));
+      url += '&data='+crypt.encryt(app.appkey, JSON.stringify(data));
     }
     console.log(url);
     ctx.redirect(url);
