@@ -42,7 +42,7 @@ class App {
           ctx.arg('state', 'string', 'State value'),
         ]
       })
-      .all(this.oauth, {
+      .all(this.all, {
         comment: 'List all registered oauth redirect urls'
       })
   }

@@ -10,9 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "rest-wrapper": "^0.1.3",
-    "co-wxapi": "^0.1.3",
+    "co": "^4.6.0",
     "co-redis": "^2.1.1",
-    "redis": "^2.6.2"
+    "co-wxapi": "^0.1.3",
+    "redis": "^2.6.2",
+    "rest-wrapper": "^0.1.3"
   }
 }
