@@ -104,8 +104,7 @@ class App {
 
   *all(args){
     var list = yield store.oauth.list();
-    console.log('oauth', list);
-    return list || [];
+    return list || {};
   }
 
   hash(val){

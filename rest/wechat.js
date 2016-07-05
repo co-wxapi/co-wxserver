@@ -63,7 +63,6 @@ class WeChat {
       data.ts = timestamp;
       url += '&data='+crypt.encryt(app.appkey, JSON.stringify(data));
     }
-    console.log(url);
     ctx.redirect(url);
   }
 
@@ -90,7 +89,6 @@ class WeChat {
         appid: api.appId
       };
     }
-    console.log(data);
     return data;
   }
 }

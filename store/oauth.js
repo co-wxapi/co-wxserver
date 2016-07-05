@@ -1,8 +1,9 @@
 'use strict';
 
 const REDIS_KEY = 'WXAPP:STATE:REGISTRY';
-var redis = require('../hub/redis');
-
+const hub = require('../hub');
+const redis = hub.redis;
+const defaultWxapp = hub.wechat[0] && hub.wechat[0].wxapp;
 function appStateKey(appid) {
   return 'WXAPP:STATES:'+appid;
 }
