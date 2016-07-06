@@ -2,6 +2,7 @@
 var wxapi = require('co-wxapi');
 var fs = require('fs');
 var path = require('path');
+var config = require('./config');
 var token = require('../store/token');
 
 class TokenProvider {
@@ -41,9 +42,9 @@ class TokenProvider {
 var apis = {};
 var firstApp = null;
 
-function setupWeixin(config){
-  for ( var wxapp in config ){
-    var wxconfig = config[wxapp];
+function setupWeixin(accounts){
+  for ( var wxapp in accounts ){
+    var wxconfig = accounts[wxapp];
     apis[wxapp] = wxapi(wxconfig);
     apis[wxapp].wxapp = wxapp;
     apis[wxapp].setTokenProvider(new TokenProvider(wxconfig));
@@ -56,21 +57,5 @@ function setupWeixin(config){
 }
 
 
-var findPaths = [path.join(__dirname, '../.wxrc'), path.join(__dirname, '../etc/wxrc'), '/etc/wxrc'];
-var config = null;
-for ( var i = 0; i < findPaths.length; ++ i ) {
-  var findPath = findPaths[i];
-  try {
-    var data = fs.readFileSync(findPath);
-    config = JSON.parse(data);
-    break;
-  }
-  catch(err) {
-    console.warn('Can not loading wechat configuration - '+findPath);
-  }
-}
-if ( config == null ) {
-  throw new Error('Wechat API not configured!');
-}
-setupWeixin(config);
+setupWeixin(config.accounts);
 module.exports = apis;

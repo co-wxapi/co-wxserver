@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 var RestWrapper = require('rest-wrapper');
 var path = require('path');
-function setup(app){
+var serverConfig = require('../hub/config').server || {};
 
-}
 
-var config = {
+var restConfig = {
   docs: true,
   http: { static: path.join(__dirname, '../www') },
-  ws: {},
-  setup: setup,
-  port: process.env.WX_PORT || 3000
+  port: serverConfig.port || process.env.WX_PORT || 3000
 }
 
-var server = RestWrapper(config);
+var server = RestWrapper(restConfig);
 server.route(path.join(__dirname, '../rest'));
