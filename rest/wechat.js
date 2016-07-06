@@ -16,18 +16,21 @@ class WeChat {
 
   *oauth(args, ctx){
     var state = args.state;
-    var more = !!args.more;
-    var wxapp = args.wxapp;
+    var more = true;
+    if ( args.more != null && !args.more ) {
+      more = false;
+    }
     var host = ctx.get('host');
     if ( !host ) {
       throw new Error('Can not get host header!');
     }
-    if ( !wxapp || !state ) {
-      this.throw('Missing params - state,wxapp', 400);
+    if ( !state ) {
+      this.throw('Missing params - state', 400);
       return;
     }
+    var stateCfg = yield store.oauth.get(args);
     var redirectUrl = 'http://'+host+'/wechat/redirect';
-    var api = this.getApi(wxapp, ctx);
+    var api = this.getApi(stateCfg.wxapp, ctx);
     var url = yield api.auth.getAuthUrl(redirectUrl, state, more);
     ctx.redirect(url);
   }
@@ -61,7 +64,8 @@ class WeChat {
       data.wxapp = api.wxapp;
       data.wxappid = api.appId;
       data.ts = timestamp;
-      url += '&data='+crypt.encryt(app.appkey, JSON.stringify(data));
+      var encData = yield crypt.encrypt(app.appkey, JSON.stringify(data));
+      url += '&data='+ encData;
     }
     ctx.redirect(url);
   }

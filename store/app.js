@@ -17,3 +17,9 @@ exports.has = function *hasApp(args) {
   var value = yield redis.hexists(REDIS_KEY, id);
   return value;
 }
+
+exports.list = function *listApp(args){
+  var value = yield redis.hgetall(REDIS_KEY);
+  if ( !value ) return {};
+  return value;
+}

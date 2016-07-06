@@ -1,0 +1,118 @@
+#!/usr/bin/env node
+var argv = Array.prototype.splice.call(process.argv, 2);
+if ( argv.length < 2 ) {
+  console.error('USAGE: wxcmd <config file> <wxserver url>');
+  console.error('  Configuration format:');
+  console.error(`  {
+    <appid>: {
+      name: <app name>,
+      appkey: <app key for encrypt/decrypt>,
+      oauth: {<state>: [<redirect url>, <wxapp>] }
+    }
+  }`);
+  process.exit(1);
+}
+var fs = require('fs');
+var path = require('path');
+var data = fs.readFileSync(argv[0], 'utf8');
+var config;
+try {
+  config = eval('('+data+')');
+}
+catch(err){
+  console.error('Parse configuration error!', err);
+}
+var serverUrl = argv[1];
+var request = require('request');
+var co = require('co');
+
+function co_request(args){
+  return function co_request_wrapper(callback){
+    request(args, function(err, resp, body){
+      callback(err, {resp: resp, body: body});
+    });
+  }
+}
+
+var callAPI = function*(url, method, args){
+  method = method || 'GET';
+  var params = {url: serverUrl+url, method: method};
+  params.json = true;
+  if ( args ) {
+    if ( method == 'GET' ) {
+      params.qs = args;
+    }
+    else {
+      params.form = args;
+    }
+  }
+  var result = yield co_request(params);
+  var resp = result.resp;
+  if (resp.statusCode >= 400) {
+    throw new Error(resp.body);
+  }
+  return result.body;
+}
+
+var callAPI_noError = function*(msg, url, method, args){
+  try {
+    yield callAPI(url, method, args);
+  }
+  catch(err){
+    console.error(msg, err, err.stack);
+    return err;
+  }
+}
+
+co(function*(){
+  var allApps = yield callAPI('/app/all');
+  for (var appid in config ) {
+    var cfg = config[appid];
+    var appkey = cfg.key || cfg.appkey;
+
+    console.log('Importing configuration for app['+appid+']');
+    if ( !cfg.appkey ) {
+      console.error('[ERROR] appkey not defined!');
+      process.exit(1);
+    }
+    if ( allApps[appid] ) {
+      console.warn('[WARN] App ['+appid+'] has already registered!');
+    }
+    else {
+      var err = yield callAPI_noError('[ERROR] Register app['+appid+']', '/app/register', 'PUT', {
+        appid: appid,
+        appname: cfg.name || cfg.appname,
+        appkey: appkey
+      });
+      if ( err ) throw err;
+      console.log('Succesfully registered app ['+appid+']')
+    }
+    var oauth = cfg.oauth;
+    for ( var state in oauth ) {
+      var value = oauth[state];
+      var oauthParams = {state:state, appid: appid, appkey: appkey};
+      if ( !value ) {
+        yield callAPI_noError('[ERROR] Unregister oauth redirect for app['+appid+'] with state ['+state+']',
+          '/app/oauthUnregister', oauthParams);
+        break;
+      }
+      else if ( typeof(value) == 'string' ) {
+        oauthParams.redirect = value;
+      }
+      else if ( value.url ) {
+        oauthParams.redirect = value.url;
+        oauthParams.wxapp = value.wxapp || value.wxappid;
+      }
+      else if ( value.length ) {
+        oauthParams.redirect = value[0];
+        oauthParams.wxapp = value[1];
+      }
+      yield callAPI_noError('[ERROR] Register oauth redirect for app['+appid+'] with state ['+state+']',
+        '/app/oauthRegister', 'PUT', oauthParams);
+      console.log('[SUCCESS] Register oauth redirect: '+oauthParams.state+'=>'+oauthParams.redirect);
+      console.log('[INFO] Oauth URL for state['+oauthParams.state+'] is '+serverUrl+'/wechat/oauth?state='+oauthParams.state);
+    }
+  }
+}).catch((err)=>{
+  console.error("Import error", err, err.stack);
+})

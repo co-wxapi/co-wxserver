@@ -103,8 +103,18 @@ class App {
   }
 
   *all(args){
+    var apps = yield store.app.list() || {};
     var list = yield store.oauth.list();
-    return list || {};
+    var data = {};
+    for ( var appid in apps ){
+      var app = apps[appid];
+      var oauth = list[appid];
+      data[appid] = {
+        appname: app.appname,
+        oauth: oauth
+      }
+    }
+    return data;
   }
 
   hash(val){
