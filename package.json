@@ -1,6 +1,6 @@
 {
   "name": "co-wxserver",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -39,8 +39,8 @@
   ],
   "bin": {
     "wxserver": "bin/wxserver",
-    "wxserver": "bin/wxtoken",
-    "wxserver": "bin/wximport"
+    "wxtoken": "bin/wxtoken",
+    "wximport": "bin/wximport"
   },
   "bugs": {
     "url": "https://github.com/co-wxapi/co-wxserver/issues"
