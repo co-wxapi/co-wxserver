@@ -83,7 +83,7 @@ class WeChat {
   }
 
   *qrcode(args, ctx) {
-    var api = this.getApi(wxapp, ctx);
+    var api = this.getApi(args.wxapp, ctx);
     var sceneId = args.scene_id || args.sceneId || args.sceneid;
     if ( sceneId == null ) {
       this.throw("Missing parameter sceneid");
@@ -92,10 +92,8 @@ class WeChat {
       sceneId = parseInt(sceneId);
     }
     var expire = parseInt(args.expire) || null;
-    console.log('qrcode', sceneId, expire);
     var ticket = yield api.qrcode.getTicket(sceneId, expire);
-    console.log('ticket', ticket);
-    var imageData = yield api.qrcode.getQRCode(ticket);
+    var imageData = yield api.qrcode.getQRCode(ticket.ticket);
     ctx.type = 'image/png';
     ctx.body = imageData;
   }
