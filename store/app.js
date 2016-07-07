@@ -12,6 +12,12 @@ exports.get = function *getApp(args){
   return value==null?null:JSON.parse(value);
 }
 
+exports.delete = function *deleteApp(args){
+  var id = args.appid;
+  var value = yield redis.hdel(REDIS_KEY, id);
+  return value==null?null:JSON.parse(value);
+}
+
 exports.has = function *hasApp(args) {
   var id = args.appid;
   var value = yield redis.hexists(REDIS_KEY, id);

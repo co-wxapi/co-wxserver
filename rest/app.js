@@ -14,6 +14,14 @@ class App {
           ctx.arg('appkey', 'string', 'App secret key used for encryption')
         ]
       })
+      .all(this.unregister, {
+          comment: 'Unregister a new app',
+          validate: true,
+          args : [
+            ctx.arg('appid', 'string', 'App identifier'),
+            ctx.arg('appkey', 'string', 'App secret key used for encryption')
+          ]
+        })
       .all(this.change, {
           comment: 'change app key',
           validate: true,
@@ -50,7 +58,7 @@ class App {
   *checkApp(args){
     var app = yield store.app.get(args);
     if ( !app ) {
-      this.throw('No app was found!');
+      this.throw('App['+args.appid+'] not exits!');
     }
     var hash = this.hash(args.appkey);
     if ( hash != app.appkey ) {
@@ -77,6 +85,12 @@ class App {
     var app = yield this.checkApp(args);
     app.appkey = this.hash(args.newkey);
     yield store.app.save(app);
+    return 'Succeeded';
+  }
+
+  *unregister(args){
+    var app = yield this.checkApp(args);
+    yield store.app.delete(args);
     return 'Succeeded';
   }
 

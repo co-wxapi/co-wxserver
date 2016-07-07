@@ -39,11 +39,23 @@ http://your.domain.name/app/register?appid=myapp&appname=My%20Test%20App&appkey=
 ```
 
 > Register oauth redirect
-For example to register state *test1* with url *http://www.google.com*
+For example to register state *test1* with url *http://yourhost/handle*
 ```
-http://your.domain.name/app/oauthRegister?appid=myapp&appkey=mykey&state=test1&redirect=http://www.google.com
+http://your.domain.name/app/oauthRegister?appid=myapp&appkey=mykey&state=test1&redirect=http://yourhost/handle
 ```
-> Oauth url for wechat
+ Open the url in wechat
 ```
 http://your.domain.name/wechat/oauth?state=test1
 ```
+ It will redirect to the state we previously registered
+```
+http://yourhost/handle?ts=xxxxx&wxapp=xxxx&data=xxxx
+  ts - the server timestamp
+  wxapp - wechat appid
+  data  - the encrypted user info, see encrypt/decrypt below
+```
+
+### Data encrypt/decrypt
+When data need to be send from co-wxserver to your server, it will be encrypted by using the appkey you registered.
+* encrypt process - aes192 encrypt with appkey then url safe base64 encode
+* decrypt process - url safe base64 decode then aes192 decrypt with appkey
