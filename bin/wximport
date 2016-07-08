@@ -4,10 +4,13 @@ if ( argv.length < 2 ) {
   console.error('USAGE: wxcmd <config file> <wxserver url>');
   console.error('  Configuration format:');
   console.error(`  {
-    <appid>: {
-      name: <app name>,
-      appkey: <app key for encrypt/decrypt>,
-      oauth: {<state>: [<redirect url>, <wxapp>] }
+    skey: <server key>,
+    apps: {
+      <appid>: {
+        name: <app name>,
+        appkey: <app key for encrypt/decrypt>,
+        oauth: {<state>: [<redirect url>, <wxapp>] }
+      }
     }
   }`);
   process.exit(1);
@@ -66,7 +69,9 @@ var callAPI_noError = function*(msg, url, method, args){
 
 co(function*(){
   var allApps = yield callAPI('/app/all');
-  for (var appid in config ) {
+  var regApps = config.app;
+  var skey = config.skey;
+  for (var appid in regApps ) {
     var cfg = config[appid];
     var appkey = cfg.key || cfg.appkey;
 
@@ -81,6 +86,7 @@ co(function*(){
     else {
       var err = yield callAPI_noError('[ERROR] Register app['+appid+']', '/app/register', 'PUT', {
         appid: appid,
+        skey: skey,
         appname: cfg.name || cfg.appname,
         appkey: appkey
       });

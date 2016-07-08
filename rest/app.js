@@ -11,7 +11,8 @@ class App {
         args : [
           ctx.arg('appid', 'string', 'App identifier'),
           ctx.arg('appname', 'string', 'App name', true),
-          ctx.arg('appkey', 'string', 'App secret key used for encryption')
+          ctx.arg('appkey', 'string', 'App secret key used for encryption'),
+          ctx.arg('skey', 'string', 'Server key to register app')
         ]
       })
       .all(this.unregister, {
@@ -19,7 +20,8 @@ class App {
           validate: true,
           args : [
             ctx.arg('appid', 'string', 'App identifier'),
-            ctx.arg('appkey', 'string', 'App secret key used for encryption')
+            ctx.arg('appkey', 'string', 'App secret key used for encryption'),
+            ctx.arg('skey', 'string', 'Server key to register app')
           ]
         })
       .all(this.change, {
@@ -68,6 +70,9 @@ class App {
   }
 
   *register(args){
+    if ( args.skey != hub.config.skey ) {
+      this.throw('Server key invalid!');
+    }
     var hasApp = yield store.app.has(args);
     if ( hasApp ) {
       this.throw('App exists!');
@@ -89,6 +94,9 @@ class App {
   }
 
   *unregister(args){
+    if ( args.skey != hub.config.skey ) {
+      this.throw('Server key invalid!');
+    }
     var app = yield this.checkApp(args);
     yield store.app.delete(args);
     return 'Succeeded';

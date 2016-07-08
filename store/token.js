@@ -1,6 +1,6 @@
 'use strict';
 var redis = require('../hub/redis');
-const REDIS_KEY = 'WXAPP:TOKEN';
+const REDIS_KEY = 'wxapp::tokens';
 class Token {
   *save(args){
     var appid = args.wxappid;

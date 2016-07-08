@@ -1,5 +1,5 @@
 'use strict';
-const REDIS_KEY = 'WXAPP:REGISTRY';
+const REDIS_KEY = 'wxapp::apps';
 var redis = require('../hub/redis');
 exports.save = function *saveApp(args){
   var id = args.appid;
