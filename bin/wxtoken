@@ -5,7 +5,7 @@ var co = require('co')
 var timer = null;
 
 function *updateToken(key){
-  var wxapi = wechat[key];
+  var wxapi = wechat.get(key);
   if ( !wxapi ) throw new Error('Wechat api not configured for '+key );
   var token = yield wxapi.token.getAccessToken();
   var ticket = yield wxapi.jsapi.getTicket(token.access_token);
@@ -31,11 +31,12 @@ function startTokenUpdatProcess(){
   co(function*(){
     var now = new Date().getTime();
     var nextTime = 7200000;
-    for ( var key in wechat ) {
-      if ( key == '0' ) continue; // skip the default one
-      var token = yield updateToken(key);
-      console.log(token)
+    var wxapps = wechat.all();
+    for ( var i = 0; i < wxapps.length; ++ i) {
+      var wxapp = wxapps[i];
+      var token = yield updateToken(wxapp);
       var timeout = token.expire;
+      console.log('Token updated', token);
       if ( timeout > 0 && timeout < nextTime ) nextTime = timeout;
     }
     var timer = setTimeout(startTokenUpdatProcess, nextTime);

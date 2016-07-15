@@ -1,12 +1,60 @@
 #!/usr/bin/env node
 var RestWrapper = require('rest-wrapper');
 var path = require('path');
-var serverConfig = require('../hub/config').server || {};
+var config = require('../hub/config') || {};
+var serverConfig = config.server || {};
+var msg = require('../rest/msg');
 
+function setup(app){
+  app.use(function*(next){
+    if ( this.path == '/') {
+      var query = this.query || {};
+      if ( query.signature && query.nonce && query.timestamp && this.method == 'GET' ) {
+        var crypto = require('crypto');
+        var token = serverConfig.token || config.skey || config.serverKey;
+        var key=[token,query.timestamp,query.nonce].sort().join('');
+        var signature = crypto.createHash('sha1').update(key).digest('hex');
+        if ( signature != query.signature ) {
+          console.error('signature verify failed, please check token!');
+          this.throw('signature verify failed, please check token!');
+        }
+        this.body = query.echostr;
+        return;
+      }
+    }
+    if ( typeof ( this.request.body ) == 'string' ) {
+      var args = yield msg.parse(this.request.body);
+      var value = yield msg.recv(args, this);
+      if ( typeof(value) == 'object' ) {
+        var xml = yield msg.build(value);
+        this.type = 'application/xml';
+        this.body = xml;
+        return;
+      }
+      else if ( value ) {
+        this.body = value;
+        return;
+      }
+    }
+    yield* next;
+  });
+}
 
 var restConfig = {
   docs: true,
-  http: { static: path.join(__dirname, '../www') },
+  setup: setup,
+  http: {
+    static: path.join(__dirname, '../www'),
+    bodyParser: {
+      enableTypes: ['json', 'form', 'text'],
+      extendTypes: {
+        text: ['text/xml', 'application/xml']
+      },
+      onerror: function(err){
+        console.error('parse body error', err);
+      }
+    }
+  },
   port: serverConfig.port || process.env.WX_PORT || 3000
 }
 

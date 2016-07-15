@@ -40,22 +40,45 @@ class TokenProvider {
 }
 
 var apis = {};
-var firstApp = null;
+var defaultApp = null;
 
 function setupWeixin(accounts){
+  var count = 0;
   for ( var wxapp in accounts ){
-    var wxconfig = accounts[wxapp];
+    var item = accounts[wxapp];
+    var wxconfig = {
+      appid: item.appid || item.appId ||  item.app_id,
+      appkey: item.appkey || item.appKey || item.app_key || item.appSecret || item.app_secret,
+      comment: item.comment || item.desc || item.description,
+      timeout: item.timeout,
+      type : item.type,
+      default: !!item.default
+    };
     apis[wxapp] = wxapi(wxconfig);
     apis[wxapp].wxapp = wxapp;
+    apis[wxapp]._wxconfig = wxconfig;
     apis[wxapp].setTokenProvider(new TokenProvider(wxconfig));
-    if ( !firstApp ) firstApp = wxapp;
+    if ( item.default ) defaultApp = wxapp;
+    count++;
   }
 
-  if ( !apis[0] && firstApp ) {
-    apis[0] = apis[firstApp];
+  if ( !count ) {
+    throw new Error('No wechat account in configuration!');
   }
 }
 
-
 setupWeixin(config.accounts);
-module.exports = apis;
+
+exports.get = function getWxapi(wxapp){
+  var api = apis[wxapp];
+  if (!api) api = apis[defaultApp];
+  return api;
+}
+
+exports.getConfig = function getWxapiConfig(wxapp){
+  return config.accounts[wxapp];
+}
+
+exports.all = function allWxapps(){
+  return Object.keys(apis);
+}

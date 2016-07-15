@@ -70,7 +70,7 @@ var callAPI_noError = function*(msg, url, method, args){
 co(function*(){
   var allApps = yield callAPI('/app/all');
   var regApps = config.app;
-  var skey = config.skey;
+  var skey = config.skey || config.serverKey || config.token;
   for (var appid in regApps ) {
     var cfg = config[appid];
     var appkey = cfg.key || cfg.appkey;

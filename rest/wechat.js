@@ -6,8 +6,7 @@ var crypt = require('../utils/crypt');
 
 class WeChat {
   getApi(wxapp, ctx){
-    wxapp = wxapp || '0';
-    var api = hub.wechat[wxapp];
+    var api = hub.wechat.get(wxapp);
     if ( !api ) {
       ctx.throw('Wechat account of '+wxapp+' not configured!');
     }
@@ -98,15 +97,43 @@ class WeChat {
     ctx.body = imageData;
   }
 
+  *shorturl(args, ctx){
+    var api = this.getApi(args.wxapp, ctx);
+    var result = yield api.qrcode.getShortUrl(args.url);
+    return result;
+  }
+
+  *upload(args, ctx){
+    if ( !args.url ) this.throw('Missing parameter url!', 400);
+    var api = this.getApi(args.wxapp, ctx);
+    var result = yield api.asset.upload(args.url, args.type || 'image');
+    return result;
+  }
+
+  *download(args, ctx){
+    var mediaId = args.mediaId || args.media_id || args.mediaid;
+    if ( !mediaId ) this.throw('Missing parameter mediaId!', 400);
+    var api = this.getApi(args.wxapp, ctx);
+    var data = yield api.asset.download(mediaId);
+    ctx.type = data.headers && data.headers['content-type'];
+    ctx.body = data;
+  }
+
   *all(args){
-    var apps = hub.wechat;
+    var wxapps = hub.wechat.all();
     var data = {};
-    for ( var key in apps ) {
-      if ( key == '0' ) continue;
-      var api = apps[key];
-      data[key] = {
-        appid: api.appId
+    for ( var i = 0; i < wxapps.length; ++i ) {
+      var wxapp = wxapps[i];
+      var wxcfg = hub.wechat.getConfig(wxapp);
+
+      data[wxapp] = {
+        comment: wxcfg.comment,
+        appid: wxcfg.appId,
+        type : wxcfg.type
       };
+      if ( wxcfg.default ) {
+        data[wxapp].default = true;
+      }
     }
     return data;
   }
