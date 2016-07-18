@@ -3,10 +3,6 @@
 const REDIS_KEY = 'wxapp::states';
 const hub = require('../hub');
 const redis = hub.redis;
-const defaultWxapp = hub.wechat[0] && hub.wechat[0].wxapp;
-function appStateKey(appid) {
-  return 'WXAPP:STATES:'+appid;
-}
 
 exports.register = function* registerOauthRedirectUrl(args){
   var state = args.state;
@@ -15,8 +11,9 @@ exports.register = function* registerOauthRedirectUrl(args){
   var wxapp = args.wxapp;
   var params = {
     appid: appid,
-    redirect: redirect
+    redirect: redirect,
   }
+  if ( args.debug ) params.debug = true;
   if ( wxapp ) params.wxapp = wxapp;
   yield redis.hset(REDIS_KEY, state, JSON.stringify(params));
 }

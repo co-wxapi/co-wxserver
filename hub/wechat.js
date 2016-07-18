@@ -39,25 +39,35 @@ class TokenProvider {
   }
 }
 
-var apis = {};
+var appMap = {};
+var accountMap = {};
 var defaultApp = null;
 
 function setupWeixin(accounts){
   var count = 0;
-  for ( var wxapp in accounts ){
-    var item = accounts[wxapp];
+  for ( var i = 0; i < accounts.length; ++ i ){
+    var item = accounts[i];
+    var wxapp = item.wxapp;
     var wxconfig = {
       appid: item.appid || item.appId ||  item.app_id,
       appkey: item.appkey || item.appKey || item.app_key || item.appSecret || item.app_secret,
+      account: item.account,
       comment: item.comment || item.desc || item.description,
       timeout: item.timeout,
+      encrypt: item.encrypt,
+      debug: !!item.debug,
       type : item.type,
       default: !!item.default
     };
-    apis[wxapp] = wxapi(wxconfig);
-    apis[wxapp].wxapp = wxapp;
-    apis[wxapp]._wxconfig = wxconfig;
-    apis[wxapp].setTokenProvider(new TokenProvider(wxconfig));
+    var api = wxapi(wxconfig);
+    api.setTokenProvider(new TokenProvider(wxconfig));
+    api.wxapp = wxapp;
+    api.wxconfig = wxconfig;
+    appMap[wxapp] = api;
+    var account = wxconfig.account;
+    if ( account ){
+      accountMap[account] = api;
+    }
     if ( item.default ) defaultApp = wxapp;
     count++;
   }
@@ -70,15 +80,22 @@ function setupWeixin(accounts){
 setupWeixin(config.accounts);
 
 exports.get = function getWxapi(wxapp){
-  var api = apis[wxapp];
-  if (!api) api = apis[defaultApp];
+  var api = appMap[wxapp];
+  if (!api) api = appMap[defaultApp];
+  return api;
+}
+
+exports.getByAccount = function getWxapiByAccount(openid){
+  var api = accountMap[openid];
   return api;
 }
 
 exports.getConfig = function getWxapiConfig(wxapp){
-  return config.accounts[wxapp];
+  var api = this.get(wxapp);
+  if ( api ) return api.wxconfig;
+  return null;
 }
 
 exports.all = function allWxapps(){
-  return Object.keys(apis);
+  return Object.keys(appMap);
 }

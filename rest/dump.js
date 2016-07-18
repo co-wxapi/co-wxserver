@@ -46,6 +46,10 @@ class Dump {
     return params;
   }
 
+  *test(args, ctx){
+    return yield this.msg(args.data, ctx);
+  }
+
   *echo(args, ctx){
     var params = {
       CreateTime: new Date().getTime(),

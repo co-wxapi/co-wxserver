@@ -4,6 +4,8 @@ var path = require('path');
 var config = require('../hub/config') || {};
 var serverConfig = config.server || {};
 var msg = require('../rest/msg');
+var serverKey = serverConfig.token || config.skey || config.serverKey;
+global.serverKey = serverKey;
 
 function setup(app){
   app.use(function*(next){
@@ -11,7 +13,7 @@ function setup(app){
       var query = this.query || {};
       if ( query.signature && query.nonce && query.timestamp && this.method == 'GET' ) {
         var crypto = require('crypto');
-        var token = serverConfig.token || config.skey || config.serverKey;
+        var token = global.serverKey;
         var key=[token,query.timestamp,query.nonce].sort().join('');
         var signature = crypto.createHash('sha1').update(key).digest('hex');
         if ( signature != query.signature ) {

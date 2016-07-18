@@ -2,8 +2,8 @@
 var hub   = require('../hub');
 var store = require('../store');
 var crypt = require('../utils/crypt');
-
-class App {
+var _Base = require('./_base');
+class App extends _Base {
   route(ctx){
     ctx.all(this.register, {
         comment: 'Register a new app',
@@ -33,44 +33,13 @@ class App {
             ctx.arg('newkey', 'string', 'New app key')
           ]
         })
-      .all(this.oauthRegister, {
-        comment: 'Register oauth callback',
-        validate: true,
-        args : [
-          ctx.arg('appid', 'string', 'App identifier'),
-          ctx.arg('appkey', 'string', 'App secret key'),
-          ctx.arg('state', 'string', 'State value'),
-          ctx.arg('redirect', 'string', 'url to redirect')
-        ]
-      })
-      .all(this.oauthUnregister, {
-        comment: 'Unregister oauth callback',
-        validate: true,
-        args : [
-          ctx.arg('appid', 'string', 'App identifier'),
-          ctx.arg('appkey', 'string', 'App secret key'),
-          ctx.arg('state', 'string', 'State value'),
-        ]
-      })
       .all(this.all, {
         comment: 'List all registered oauth redirect urls'
       })
   }
 
-  *checkApp(args){
-    var app = yield store.app.get(args);
-    if ( !app ) {
-      this.throw('App['+args.appid+'] not exits!');
-    }
-    var hash = this.hash(args.appkey);
-    if ( hash != app.appkey ) {
-      this.throw('Key not match!');
-    }
-    return app;
-  }
-
   *register(args){
-    if ( args.skey != hub.config.skey ) {
+    if ( args.skey != global.serverKey ) {
       this.throw('Server key invalid!');
     }
     var hasApp = yield store.app.has(args);
@@ -87,40 +56,18 @@ class App {
   }
 
   *change(args){
-    var app = yield this.checkApp(args);
+    var app = yield this._checkApp(args);
     app.appkey = this.hash(args.newkey);
     yield store.app.save(app);
     return 'Succeeded';
   }
 
   *unregister(args){
-    if ( args.skey != hub.config.skey ) {
+    if ( args.skey != global.serverKey ) {
       this.throw('Server key invalid!');
     }
-    var app = yield this.checkApp(args);
+    var app = yield this._checkApp(args);
     yield store.app.delete(args);
-    return 'Succeeded';
-  }
-
-  *oauthRegister(args){
-    var app = yield this.checkApp(args);
-    if ( yield store.oauth.canRegister(args) ) {
-      yield store.oauth.register(args);
-    }
-    else {
-      this.throw('Oauth redirect url not own by you - '+args.state);
-    }
-    return 'Succeeded';
-  }
-
-  *oauthUnregister(args){
-    var app = yield this.checkApp(args);
-    if ( yield store.oauth.canRegister(args) ) {
-      yield store.oauth.unregister(args);
-    }
-    else {
-      this.throw('Oauth redirect url not own by you - '+args.state);
-    }
     return 'Succeeded';
   }
 
@@ -137,10 +84,6 @@ class App {
       }
     }
     return data;
-  }
-
-  hash(val){
-    return crypt.hash(val);
   }
 }
 

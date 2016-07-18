@@ -5,13 +5,14 @@ if ( argv.length < 2 ) {
   console.error('  Configuration format:');
   console.error(`  {
     skey: <server key>,
-    apps: {
-      <appid>: {
-        name: <app name>,
+    apps: [
+      {
+        appid: <app id>,
+        appname: <app name>,
         appkey: <app key for encrypt/decrypt>,
         oauth: {<state>: [<redirect url>, <wxapp>] }
       }
-    }
+    ]
   }`);
   process.exit(1);
 }
@@ -67,13 +68,70 @@ var callAPI_noError = function*(msg, url, method, args){
   }
 }
 
+function* registerOauth(appid, appkey, config){
+  var oauth = config.oauth;
+  for ( var state in oauth ) {
+    var value = oauth[state];
+    var oauthParams = {state:state, appid: appid, appkey: appkey};
+    if ( !value ) {
+      yield callAPI_noError('[ERROR] Unregister oauth redirect for app['+appid+'] with state ['+state+']',
+        '/oauth/unregister', oauthParams);
+      break;
+    }
+    else if ( typeof(value) == 'string' ) {
+      oauthParams.redirect = value;
+    }
+    else if ( value.url ) {
+      oauthParams.redirect = value.url;
+      oauthParams.wxapp = value.wxapp || value.wxappid;
+    }
+    else if ( value.length ) {
+      oauthParams.redirect = value[0];
+      oauthParams.wxapp = value[1];
+      if ( value[2] ) {
+        oauthParams.debug = true;
+      }
+    }
+    yield callAPI_noError('[ERROR] Register oauth redirect for app['+appid+'] with state ['+state+']',
+      '/oauth/register', 'PUT', oauthParams);
+    console.log('[SUCCESS] Register oauth redirect: '+oauthParams.state+'=>'+oauthParams.redirect);
+    console.log('[INFO] Oauth URL for state['+oauthParams.state+'] is '+serverUrl+'/wechat/oauth?state='+oauthParams.state);
+  }
+}
+
+
+function* registerMsg(appid, appkey, config){
+  var msgs = config.msgs;
+  for ( var type in msgs ) {
+    var url = msgs[type];
+    var msgParams = {appid: appid, appkey: appkey, type: type};
+    if ( typeof url == 'string' ) {
+      msgParams.url = url;
+    }
+    else {
+      msgParams.url = url[0];
+      if (url[1]) msgParams.wxapp = url[1];
+      if (url[2]) msgParams.encrypt = url[2]
+    }
+    if ( msgParams.url == false ) {
+      yield callAPI_noError('[ERROR] Unregister message handle for app['+appid+'] with type ['+type+']',
+        '/msg/unregister', msgParams);
+      break;
+    }
+    yield callAPI_noError('[ERROR] Register message handle for app['+appid+'] with type ['+type+']',
+      '/msg/register', 'PUT', msgParams);
+    console.log('[SUCCESS] Register message handle: '+msgParams.wxapp+':'+type+'=>'+msgParams.url);
+  }
+}
+
 co(function*(){
   var allApps = yield callAPI('/app/all');
-  var regApps = config.app;
+  var regApps = config.apps || [];
   var skey = config.skey || config.serverKey || config.token;
-  for (var appid in regApps ) {
-    var cfg = config[appid];
-    var appkey = cfg.key || cfg.appkey;
+  for (var appIndex = 0; appIndex < regApps.length; ++appIndex ) {
+    var cfg = regApps[appIndex];
+    var appid = cfg.appid || cfg.id;
+    var appkey = cfg.appkey || cfg.key;
 
     console.log('Importing configuration for app['+appid+']');
     if ( !cfg.appkey ) {
@@ -93,31 +151,8 @@ co(function*(){
       if ( err ) throw err;
       console.log('Succesfully registered app ['+appid+']')
     }
-    var oauth = cfg.oauth;
-    for ( var state in oauth ) {
-      var value = oauth[state];
-      var oauthParams = {state:state, appid: appid, appkey: appkey};
-      if ( !value ) {
-        yield callAPI_noError('[ERROR] Unregister oauth redirect for app['+appid+'] with state ['+state+']',
-          '/app/oauthUnregister', oauthParams);
-        break;
-      }
-      else if ( typeof(value) == 'string' ) {
-        oauthParams.redirect = value;
-      }
-      else if ( value.url ) {
-        oauthParams.redirect = value.url;
-        oauthParams.wxapp = value.wxapp || value.wxappid;
-      }
-      else if ( value.length ) {
-        oauthParams.redirect = value[0];
-        oauthParams.wxapp = value[1];
-      }
-      yield callAPI_noError('[ERROR] Register oauth redirect for app['+appid+'] with state ['+state+']',
-        '/app/oauthRegister', 'PUT', oauthParams);
-      console.log('[SUCCESS] Register oauth redirect: '+oauthParams.state+'=>'+oauthParams.redirect);
-      console.log('[INFO] Oauth URL for state['+oauthParams.state+'] is '+serverUrl+'/wechat/oauth?state='+oauthParams.state);
-    }
+    yield registerOauth(appid, appkey, cfg);
+    yield registerMsg(appid, appkey, cfg);
   }
 }).catch((err)=>{
   console.error("Import error", err, err.stack);

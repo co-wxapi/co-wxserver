@@ -28,13 +28,13 @@ class WeChat {
       return;
     }
     var stateCfg = yield store.oauth.get(args);
-    var redirectUrl = 'http://'+host+'/wechat/redirect';
+    var redirectUrl = 'http://'+host+'/wechat/token';
     var api = this.getApi(stateCfg.wxapp, ctx);
     var url = yield api.auth.getAuthUrl(redirectUrl, state, more);
     ctx.redirect(url);
   }
 
-  *redirect(args, ctx){
+  *token(args, ctx){
     var state = args.state;
     var code = args.code;
     if ( !state ) {
@@ -49,24 +49,76 @@ class WeChat {
     var url = config.redirect;
     var wxapp = config.wxapp;
     var api = this.getApi(wxapp, ctx);
+    var wxconfig = hub.wechat.getConfig(wxapp);
     var token = yield api.auth.getAuthToken(code);
     var timestamp = new Date().getTime();
-    var data = yield api.auth.getUserInfo(token.access_token, token.openid);
+    var data = token;
     if ( url.indexOf('?') < 0 ) {
       url += '?ts='+timestamp;
     }
     else {
       url += '&ts='+timestamp;
     }
-    url += '&wxapp='+api.wxapp;
     if ( data ) {
-      data.wxapp = api.wxapp;
+      data.wxapp = wxapp;
       data.wxappid = api.appId;
       data.ts = timestamp;
-      var encData = yield crypt.encrypt(app.appkey, JSON.stringify(data));
-      url += '&data='+ encData;
+      if ( wxconfig.encrypt ) {
+        var encData = yield crypt.encrypt(app.appkey, JSON.stringify(data));
+        url += '&data='+ encData;
+      }
+      else {
+        url += '&data='+encodeURIComponent(JSON.stringify(data));
+      }
     }
-    ctx.redirect(url);
+    if ( config.debug ) {
+      var host = ctx.get('host');
+      var userUrl = 'http://'+host+'/wechat/user?access_token='+token.access_token+'&openid='+token.openid+'&wxapp='+wxapp;
+      ctx.body = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <ul>
+      <li>State: ${state}</li>
+      <li>Token: ${JSON.stringify(token)}</li>
+      <li>Redirect: <a href="${url}">${url}</a></li>
+      <li>User: <a href="${userUrl}">${userUrl}</a></li>
+    </ul>
+  </body>
+</html>`
+    }
+    else{
+      ctx.redirect(url);
+    }
+  }
+
+  *user(args, ctx){
+    var wxapp = args.wxapp;
+    var token = args.token || args.access_token;
+    var lang  = args.lang;
+    var openid = args.openid;
+    if ( !token || !openid ) {
+      this.throw('Access token or openid is not provided!', 400);
+      return;
+    }
+    var api = this.getApi(wxapp, ctx);
+    var wxconfig = hub.wechat.getConfig(wxapp);
+    var timestamp = new Date().getTime();
+    var user = yield api.auth.getUserInfo(token, openid, lang);
+    var data = {};
+    if ( user ) {
+      data.wxappid = api.appId;
+      data.ts = timestamp;
+      if ( wxconfig.encrypt ) {
+        data.user = yield crypt.encrypt(app.appkey, JSON.stringify(user));
+      }
+      else {
+        data.user = user;
+      }
+    }
+    return data;
   }
 
   *wxconfig(args, ctx){
