@@ -4,11 +4,14 @@ var path = require('path');
 var config = require('../hub/config') || {};
 var serverConfig = config.server || {};
 var msg = require('../rest/msg');
+var debug = require('../utils/debug');
 var serverKey = serverConfig.token || config.skey || config.serverKey;
 global.serverKey = serverKey;
+debug.enable(config.debug);
 
 function setup(app){
   app.use(function*(next){
+    debug(this.method, this.path);
     if ( this.path == '/') {
       var query = this.query || {};
       if ( query.signature && query.nonce && query.timestamp && this.method == 'GET' ) {
@@ -21,6 +24,7 @@ function setup(app){
           this.throw('signature verify failed, please check token!');
         }
         this.body = query.echostr;
+        console.log('Server is configured successfully!');
         return;
       }
     }

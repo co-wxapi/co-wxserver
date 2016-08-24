@@ -39,7 +39,7 @@ class Msg extends _Base {
         return body;
       }
     }
-    return yield dump.msg(args, ctx);
+    return yield dump.msg(args, ctx, api);
   }
 
   *send(args){
