@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 var argv = Array.prototype.splice.call(process.argv, 2);
 if ( argv.length < 2 ) {
-  console.error('USAGE: wxcmd <config file> <wxserver url>');
+  console.error('USAGE: wximport <config file> <wxserver url>');
   console.error('  Configuration format:');
   console.error(`  {
     skey: <server key>,

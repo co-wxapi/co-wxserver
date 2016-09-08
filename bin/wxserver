@@ -35,10 +35,15 @@ function setup(app){
         var xml = yield msg.build(value);
         this.type = 'application/xml';
         this.body = xml;
+        console.log(xml);
         return;
       }
       else if ( value ) {
         this.body = value;
+        return;
+      }
+      else {
+        this.body = '';
         return;
       }
     }
@@ -66,3 +71,5 @@ var restConfig = {
 
 var server = RestWrapper(restConfig);
 server.route(path.join(__dirname, '../rest'));
+
+module.exports = server;
