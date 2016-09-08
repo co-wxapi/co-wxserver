@@ -1,12 +1,15 @@
 var path = require('path');
 var fs = require('fs');
 var findPaths;
+/*
 if ( process.argv.length > 2 ) {
   findPaths = [process.argv[2]];
 }
 else {
   findPaths = ['.wxrc', path.join(__dirname, '../.wxrc'), path.join(__dirname, '../etc/wxrc'), '/etc/wxrc'];
 }
+*/
+findPaths = ['.wxrc', 'wxrc', path.join(__dirname, '../.wxrc'), path.join(__dirname, '../etc/wxrc'), '/etc/wxrc'];
 var config = null;
 for ( var i = 0; i < findPaths.length; ++ i ) {
   var findPath = findPaths[i];

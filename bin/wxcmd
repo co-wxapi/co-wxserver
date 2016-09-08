@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+var RestWrapper = require('rest-wrapper');
+var path = require('path');
+var config = require('../hub/config') || {};
+var serverConfig = config.server || {};
+var debug = require('../utils/debug');
+var serverKey = serverConfig.token || config.skey || config.serverKey;
+global.serverKey = serverKey;
+debug.enable(config.debug);
+var argv = Array.prototype.splice.call(process.argv, 2);
+var wxapp = argv[0];
+var mod = argv[1];
+var method = argv[2];
+var wechat = require('../hub/wechat');
+var wxapi = wechat.get(wxapp);
+var modAPI = wxapi[mod]
+if ( !modAPI ) {
+  console.error('Module '+mod+' not found!');
+  return;
+}
+var func = modAPI[method];
+if ( !func ) {
+  console.error('Method ' + method+ ' not found!');
+  return;
+}
+var args = argv.slice(3);
+var gen = func.apply(modAPI, args);
+var co = require('co');
+co(function*(){
+  var result = yield gen;
+  console.log(result);
+}).catch(function(err){
+  console.error('Error', err);
+})
