@@ -16,6 +16,9 @@ class Msg extends _Base {
       var wxapp = api.wxapp;
       var params = {wxapp:wxapp, type:type};
       var config = yield store.msg.get(params);
+      if ( !config ) {
+        config = yield store.msg.get({wxapp:wxapp});
+      }
       if ( config ) {
         var data = {
           ts: new Date().getTime(),

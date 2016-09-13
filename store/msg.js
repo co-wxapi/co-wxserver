@@ -33,9 +33,10 @@ exports.unregister = function* unregisterMsgHandler(args){
 
 exports.get = function* getMsgHandleUrl(args){
   var wxapp = args.wxapp;
-  var type = args.type;
+  var type = args.type || '*';
   var subKey = makeKey(wxapp, type);
   var config = yield redis.hget(REDIS_KEY, subKey);
+  console.log('hget', REDIS_KEY, subKey);
   if ( config ) {
     return JSON.parse(config);
   }
